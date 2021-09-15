@@ -7,10 +7,12 @@ class Controller
 
     protected function render($view, $params = [])
     {
+        $params['isLoggedIn'] = $this->loggedIn();
         $content = $this->renderView($view, $params);
         return $this->renderView('layout/main', [
             'content' => $content,
-            'flashMessages' => $this->getFlashMessages(true)
+            'flashMessages' => $this->getFlashMessages(true),
+            'isLoggedIn' => $params['isLoggedIn']
         ]);
     }
 
@@ -28,7 +30,7 @@ class Controller
     {
         $cleanParams = [];
         foreach ($params as $key => $value) {
-            if (empty(trim($value))) continue;
+            if (!is_numeric($value) && empty(trim($value))) continue;
             $cleanParams[$key] = $value;
         }
 
@@ -37,32 +39,64 @@ class Controller
 
     public function redirect($uri)
     {
+        if ($uri == 'back') {
+            $uri = $_SERVER['HTTP_REFERER'] ?? '/';
+        }
         header("Location: " . $uri);
         exit();
     }
 
-    public function setFlashMessage($key, $value)
+    public function setSession($key, $value)
     {
         if (session_status() != PHP_SESSION_ACTIVE) {
             session_start();
         }
-        $flashes = isset($_SESSION['flashes']) ? $_SESSION['flashes'] : [];
+
+        $_SESSION[$key] = $value;
+    }
+
+    public function getSession($key, $default = null)
+    {
+        if (session_status() != PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        return isset($_SESSION[$key]) ? $_SESSION[$key] : $default;
+    }
+
+    public function setFlashMessage($key, $value)
+    {
+        $flashes = $this->getSession('flashes', []);
         $flashes[] = ['key' => $key, 'value' => $value];
-        $_SESSION['flashes'] = $flashes;
+        $this->setSession('flashes', $flashes);
     }
 
     public function getFlashMessages($clear = false)
     {
-        if (session_status() != PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        $flashes = isset($_SESSION['flashes']) ? $_SESSION['flashes'] : null;
+        $flashes =  $this->getSession('flashes');
 
         if ($clear && $flashes) {
             unset($_SESSION['flashes']);
         }
 
         return $flashes;
+    }
+
+    public function authenticate()
+    {
+        $this->setSession('user', true);
+        setcookie('user', 'login', time() + 3600);
+    }
+
+    public function loggedIn()
+    {
+        return $this->getSession('user');
+    }
+
+    public function signOut()
+    {
+        if ($this->getSession('user')) {
+            unset($_SESSION['user']);
+        }
     }
 }

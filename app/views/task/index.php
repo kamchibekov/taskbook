@@ -3,27 +3,39 @@
         <thead>
             <tr>
                 <th scope="col">#</th>
-                <th scope="col"><a href="?sort[name]=<?= $sort['user_name'] ?>">Name</a></th>
-                <th scope="col"><a href="?sort[name]=<?= $sort['email'] ?>">Email</a></th>
+                <th scope="col"><a class="text-decoration-none" href="?page=<?= $page ?>&sort[user_name]=<?= $sort['user_name'] ?>">Name</a></th>
+                <th scope="col"><a class="text-decoration-none" href="?page=<?= $page ?>&sort[email]=<?= $sort['email'] ?>">Email</a></th>
                 <th scope="col">Task</th>
-                <th scope="col"><a href="?sort[name]=<?= $sort['status'] ?>">Status</a></th>
+                <th scope="col"><a class="text-decoration-none" href="?page=<?= $page ?>&sort[status]=<?= $sort['status'] ?>">Status</a></th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($tasks as $task) : ?>
                 <tr>
                     <th scope="row"><?= $task->id; ?></th>
-                    <td><?= htmlspecialchars($task->user_name) ?></td>
-                    <td><?= htmlspecialchars($task->email) ?></td>
-                    <td><?= htmlspecialchars($task->task_text) ?></td>
+                    <td><?= $task->user_name ?></td>
+                    <td><?= $task->email ?></td>
                     <td>
-                        <?php if ($task->status) : ?>
-                            <span class="badge rounded-pill bg-success">Done &#10003;</span>
+                        <?php if ($isLoggedIn) : ?>
+                            <textarea class="form-control" task-id="<?= $task->id; ?>" onchange="changeText(this)"> <?= $task->task_text ?></textarea>
                         <?php else : ?>
-                            <span class="badge rounded-pill bg-light text-dark">In progress</span>
+                            <?= $task->task_text ?>
                         <?php endif; ?>
-                        <?php if ($task->content_changed) : ?>
-                            <span class="badge rounded-pill bg-info">Changed by Admin</span>
+                    </td>
+                    <td>
+                        <?php if ($isLoggedIn) : ?>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input change-status" onclick="changeStatus(this)" type="checkbox" <?= $task->status ? 'checked' : '' ?> task-id="<?= $task->id; ?>">
+                            </div>
+                        <?php else : ?>
+                            <?php if ($task->status) : ?>
+                                <span class="badge rounded-pill bg-success">Done &#10003;</span>
+                            <?php else : ?>
+                                <span class="badge rounded-pill bg-light text-dark">In progress</span>
+                            <?php endif; ?>
+                            <?php if ($task->content_changed) : ?>
+                                <span class="badge rounded-pill bg-info">Changed by Admin</span>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -32,20 +44,21 @@
     </table>
 <?php endif; ?>
 <br>
+<p> <?= "COUNT: " . $count . " QUERY: " ?> </p>
 <?php if ($count > $limit) : ?>
     <nav class="d-flex justify-content-center">
         <ul class="pagination">
             <?php if ($page > 1) : ?>
-                <li class="page-item"><a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="?page=<?= ($page - 1) . $sortQuery ?>">Previous</a></li>
             <?php endif; ?>
             <?php for ($i = 1; $i <= ceil($count / $limit); $i++) : ?>
                 <li class="page-item <?= $page == $i ? 'active' : $i ?>">
-                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                    <a class="page-link" href="?page=<?= $i  . $sortQuery ?>"><?= $i ?></a>
                 </li>
             <?php endfor; ?>
 
             <?php if ($page < ceil($count / $limit)) : ?>
-                <li class="page-item"><a class="page-link" href="?page=<?= $page + 1 ?>">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page=<?= ($page + 1) . $sortQuery ?>">Next</a></li>
             <?php endif; ?>
         </ul>
     </nav>

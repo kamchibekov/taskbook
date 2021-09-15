@@ -10,7 +10,11 @@ class Db
     private function __construct()
     {
         $config = require "config.php";
-        $this->db = new \SQLite3(__DIR__ . '/' . $config['db']);
+        try {
+            $this->db = new \PDO('sqlite:' . __DIR__ . '/' . $config['db']);
+        } catch (\PDOException $e) {
+            die('DB connection error. message: ' . $e->getMessage());
+        }
     }
 
     public static function getInstance()

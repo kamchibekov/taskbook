@@ -18,7 +18,11 @@
                 <div class="d-flex">
                     <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createTaskModal">Create task</button>
                     &emsp;
-                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#userLoginModal">Log In</button>
+                    <?php if ($isLoggedIn) : ?>
+                        <a type="button" href="/logout" class="btn btn-outline-primary" >Log out</a>
+                    <?php else : ?>
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#userLoginModal">Log In</button>
+                    <?php endif; ?>
                     </form>
                 </div>
             </div>

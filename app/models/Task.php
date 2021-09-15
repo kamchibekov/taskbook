@@ -10,10 +10,14 @@ class task
     public $user_name;
     public $email;
     public $task_text;
-    public $done;
+    public $status;
     public $content_changed;
 
     private static $attributes = null;
+
+    public function __construct()
+    {
+    }
 
     public static function tableName()
     {
@@ -24,21 +28,64 @@ class task
     {
         $db = Db::getInstance()->db();
         $tableName = self::tableName();
-        $count = $db->querySingle("SELECT COUNT(*) as count FROM {$tableName}");
+        $count = $db->query("SELECT COUNT(*) as count FROM {$tableName}")->fetchColumn();
         return $count;
     }
 
-    public static function findAll($offset = 0, $limit = 3)
+    public static function update(int $id, array $fields)
     {
         $db = Db::getInstance()->db();
         $tableName = self::tableName();
-        $stmt = $db->prepare("SELECT * FROM {$tableName} limit :offset,:lim");
-        $stmt->bindParam(':offset', $offset);
-        $stmt->bindParam(':lim', $limit);
+
+        $SET = '';
+
+        foreach (array_keys($fields) as $field) {
+            $SET .= "$field=:{$field},";
+        }
+
+        $SET = rtrim($SET, ',');
+
+        $sql = "UPDATE {$tableName} SET $SET WHERE id ={$id}";
+
+        $stmt = $db->prepare($sql);
+
+        foreach ($fields as $key => $value) {
+            $type = (is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+            error_log("TYPE: " . $type);
+            $stmt->bindValue(":{$key}", $value);
+        }
+
         $result = $stmt->execute();
+
+        if ($result) {
+            return $stmt->rowCount();
+        }
+        return false;
+    }
+
+    public static function findAll($params)
+    {
+        $offset = $params['offset'] ?? 0;
+        $limit = $params['limit'] ?? 0;
+        $fields = $params['fields'] ?? '*';
+        $sort = !empty($params['sort']) ? 'ORDER BY ' . $params['sort'] : '';
+
+        $tableName = self::tableName();
+        $sql = "SELECT {$fields} FROM {$tableName} {$sort} limit :offset,:lim";
+        $db = Db::getInstance()->db();
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->bindParam(':lim', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetchAll();
+
         $tasks = [];
-        while ($task = $result->fetchArray()) {
-            $tasks[] = (object)$task;
+        foreach ($result as $row) {
+            $taskObject = new \stdClass();
+            foreach ($row as $key => $value) {
+                $taskObject->{$key} = htmlspecialchars($value);
+            }
+            $tasks[] = $taskObject;
         }
         return $tasks;
     }
