@@ -44,7 +44,6 @@
     </table>
 <?php endif; ?>
 <br>
-<p> <?= "COUNT: " . $count . " QUERY: " ?> </p>
 <?php if ($count > $limit) : ?>
     <nav class="d-flex justify-content-center">
         <ul class="pagination">
